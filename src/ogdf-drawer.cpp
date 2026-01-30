@@ -13,14 +13,18 @@
 #include <ogdf/planarity/SubgraphPlanarizer.h>
 #include <ogdf/planarity/VariableEmbeddingInserter.h>
 
+#include <domus/core/utils.hpp>
+
 #include <cmath>
 #include <set>
 #include <string>
+#include <map>
+#include <utility>
 
 class OGDFDrawing {
 private:
-  std::unordered_map<int, std::tuple<int, int>> id_to_coords;
-  std::unordered_map<int, std::vector<int>> edge_to_bend_ids;
+  std::map<int, std::pair<int, int>> id_to_coords;
+  std::map<int, std::vector<int>> edge_to_bend_ids;
 
 public:
   void set_edge_to_bend_ids(int key, int bend_id) {
@@ -35,10 +39,9 @@ public:
     return edge_to_bend_ids.find(key) != edge_to_bend_ids.end();
   }
   void set_id_to_coords(int id, int x, int y) {
-    id_to_coords[id] = std::make_tuple(x, y);
+    id_to_coords[id] = std::pair(x, y);
   }
   auto get_id_to_coords(int id) { return id_to_coords[id]; }
-  auto get_id_to_coords() { return id_to_coords; }
 };
 
 int make_key(int x, int y) {
@@ -195,21 +198,6 @@ int compute_normalized_area(const ogdf::GraphAttributes &GA,
   return x * y;
 }
 
-double compute_standard_deviation(std::vector<int> metric_per_edge) {
-  int n = metric_per_edge.size();
-  if (n == 0)
-    return 0.0;
-  double sum = 0.0;
-  for (int elem : metric_per_edge)
-    sum += elem;
-  double mean = sum / n;
-  double variance = 0.0;
-  for (int elem : metric_per_edge)
-    variance += (elem - mean) * (elem - mean);
-  variance /= n;
-  return std::sqrt(variance);
-}
-
 int count_bends(const ogdf::GraphAttributes &GA, const ogdf::Graph &G) {
   int bends = 0;
   for (ogdf::edge e : G.edges) {
@@ -244,34 +232,31 @@ int count_crossings(const ogdf::GraphAttributes &GA,
   return crossings / 2;
 }
 
-OGDFResult create_drawing(const Graph &graph,
+OGDFResult create_drawing(const UndirectedSimpleGraph &graph,
                           const std::string svg_output_filename,
                           const std::string gml_output_filename) {
-  ogdf::Graph G;
-  ogdf::GraphAttributes GA(G, ogdf::GraphAttributes::nodeGraphics |
-                                  ogdf::GraphAttributes::nodeType |
-                                  ogdf::GraphAttributes::edgeGraphics |
-                                  ogdf::GraphAttributes::edgeType |
-                                  ogdf::GraphAttributes::nodeLabel |
-                                  ogdf::GraphAttributes::nodeStyle |
-                                  ogdf::GraphAttributes::nodeTemplate);
-  std::unordered_map<int, ogdf::node> nodes;
-  for (const GraphNode *node : graph.get_nodes())
-    nodes[node->get_id()] = G.newNode(node->get_id());
-  for (const GraphNode *node : graph.get_nodes()) {
-    int i = node->get_id();
-    for (const GraphEdge &edge : node->get_edges()) {
-      int j = edge.get_to_id();
-      if (i < j)
+    ogdf::Graph G;
+    ogdf::GraphAttributes GA(G, ogdf::GraphAttributes::nodeGraphics |
+                                ogdf::GraphAttributes::nodeType |
+                                ogdf::GraphAttributes::edgeGraphics |
+                                ogdf::GraphAttributes::edgeType |
+                                ogdf::GraphAttributes::nodeLabel |
+                                ogdf::GraphAttributes::nodeStyle |
+                                ogdf::GraphAttributes::nodeTemplate);
+    std::unordered_map<int, ogdf::node> nodes;
+    for (int node_id : graph.get_nodes_ids())
+    nodes[node_id] = G.newNode(node_id);
+    for (const GraphEdge edge : graph.get_edges()) {
+        int i = edge.get_from_id();
+        int j = edge.get_to_id();
         G.newEdge(nodes[i], nodes[j]);
     }
-  }
 
-  for (ogdf::node v : G.nodes) {
-    GA.width(v) /= 2;
-    GA.height(v) /= 2;
-    GA.label(v) = std::to_string(v->index());
-  }
+    for (ogdf::node v : G.nodes) {
+        GA.width(v) /= 2;
+        GA.height(v) /= 2;
+        GA.label(v) = std::to_string(v->index());
+    }
 
   ogdf::PlanarizationLayout pl;
 
@@ -310,13 +295,13 @@ OGDFResult create_drawing(const Graph &graph,
   int crossings = count_crossings(GA, stats);
   int bends = count_bends(GA, G);
   int max_bends_per_edge = count_max_number_of_bends(GA, G);
-  double edge_length_stddev = compute_standard_deviation(lengths_per_edge);
+  double edge_length_stddev = compute_stddev(lengths_per_edge);
   std::vector<int> bends_per_edge;
   for (ogdf::edge e : G.edges) {
     int bend_count = GA.bends(e).size() - 2;
     bends_per_edge.push_back(bend_count);
   }
-  double bends_stddev = compute_standard_deviation(bends_per_edge);
+  double bends_stddev = compute_stddev(bends_per_edge);
 
   return {crossings,          bends,           normalized_area,
           total_edge_length,  max_edge_length, edge_length_stddev,

@@ -15,7 +15,7 @@ struct OGDFResult {
   double bends_stddev;
 };
 
-OGDFResult create_drawing(const Graph &graph,
+OGDFResult create_drawing(const UndirectedSimpleGraph &graph,
                           const std::string svg_output_filename = "",
                           const std::string gml_output_filename = "");
 

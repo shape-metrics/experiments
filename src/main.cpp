@@ -17,7 +17,7 @@
 
 std::unordered_set<std::string> graphs_already_in_csv;
 
-auto test_ogdf_approach(const Graph &graph,
+auto test_ogdf_approach(const UndirectedSimpleGraph &graph,
                         const std::string &svg_output_filename) {
   auto start = std::chrono::high_resolution_clock::now();
   auto result = create_drawing(graph, svg_output_filename, "");
@@ -61,7 +61,7 @@ void compute_stats_ogdf(std::string &folder_path, std::ofstream &results_file,
             number_of_processed_graphs.fetch_add(1, std::memory_order_relaxed);
         if (graphs_already_in_csv.contains(graph_filename))
           continue;
-        std::unique_ptr<Graph> graph = load_graph_from_txt_file(entry_path);
+        std::unique_ptr<UndirectedSimpleGraph> graph = load_graph_from_txt_file(entry_path);
         {
           std::lock_guard<std::mutex> lock(input_output_lock);
           std::cout << "Processing graph #" << current_number << " - "
