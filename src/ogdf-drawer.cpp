@@ -103,7 +103,7 @@ void compute_augmented_graph_and_positions(
 
 auto compute_coordinate(
     const std::map<int, std::vector<int>>& coordinate_to_ids) {
-    constexpr int THRESHOLD = 7500;
+    constexpr int THRESHOLD = 4000;
     int last_ogdf_coordinate = 0;
     int coordinate_to_use = 0;
     std::unordered_map<int, int> new_positions_coordinate;
@@ -241,7 +241,7 @@ std::pair<OrthogonalDrawing, double> make_orthogonal_drawing_ogdf(
 
     ogdf::OrthoLayout* ol = new ogdf::OrthoLayout;
     ol->separation(100.0);
-    ol->cOverhang(0.2);
+    ol->cOverhang(0.0);
     pl.setPlanarLayouter(ol);
 
     ogdf::setSeed(0);

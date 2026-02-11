@@ -13,3 +13,4 @@ ogdf_experiments
 /rome_graphs*
 /output-svgs
 test_results.csv
+/experiments-results
