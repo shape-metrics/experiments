@@ -88,7 +88,7 @@ void initialize_csv_file(std::ofstream& result_file) {
                 << "bends_stddev,time" << std::endl;
 }
 
-void run_stats() {
+void run_stats(std::string folder_path) {
     std::cout << "Running stats ogdf..." << std::endl;
     std::string csv_filename = "test_results.csv";
     std::ofstream result_file;
@@ -126,13 +126,17 @@ void run_stats() {
                       << std::endl;
             return;
         }
-    std::string graphs_folder = "rome_graphs/";
-    compute_stats_ogdf(graphs_folder, result_file, svgs_folder);
+    compute_stats_ogdf(folder_path, result_file, svgs_folder);
     std::cout << std::endl;
     result_file.close();
 }
 
-int main() {
-    run_stats();
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        std::cout << "Insert graphs folder path" << std::endl;
+        return 1;
+    }
+    std::string folder_path = argv[1];
+    run_stats(folder_path);
     return 0;
 }
