@@ -53,8 +53,7 @@ void compute_stats_ogdf(
                     1, std::memory_order_relaxed);
                 if (graphs_already_in_csv.contains(graph_filename))
                     continue;
-                std::unique_ptr<UndirectedSimpleGraph> graph =
-                    load_graph_from_txt_file(entry_path);
+                UndirectedGraph graph = load_graph_from_txt_file(entry_path);
                 {
                     std::lock_guard<std::mutex> lock(input_output_lock);
                     std::cout << "Processing graph #" << current_number << " - "
@@ -63,7 +62,7 @@ void compute_stats_ogdf(
                 const std::string svg_filename =
                     svgs_folder + graph_filename + "_ogdf.svg";
                 auto [drawing, time] =
-                    make_orthogonal_drawing_ogdf(*graph, svg_filename);
+                    make_orthogonal_drawing_ogdf(graph, svg_filename);
                 OrthogonalStats stats = compute_all_orthogonal_stats(drawing);
                 {
                     std::lock_guard<std::mutex> lock(input_output_lock);

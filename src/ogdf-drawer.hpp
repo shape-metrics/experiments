@@ -7,7 +7,7 @@
 #include <utility>
 
 std::pair<OrthogonalDrawing, double> make_orthogonal_drawing_ogdf(
-    const UndirectedSimpleGraph& graph,
+    const UndirectedGraph& graph,
     const std::string& svg_output_filename);
 
 #endif
