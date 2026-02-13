@@ -4,10 +4,9 @@
 #include <domus/core/graph/graph.hpp>
 #include <domus/orthogonal/drawing.hpp>
 #include <string>
-#include <utility>
+#include <tuple>
 
-std::pair<OrthogonalDrawing, double> make_orthogonal_drawing_ogdf(
-    const UndirectedGraph& graph,
-    const std::string& svg_output_filename);
+std::tuple<OrthogonalDrawing, double, std::string>
+make_orthogonal_drawing_ogdf(const UndirectedGraph& graph);
 
 #endif

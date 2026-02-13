@@ -11,6 +11,6 @@ ogdf_experiments
 /OGDF
 /.vscode
 /rome_graphs*
-/output-svgs
+/output-svgs-*
 test_results.csv
 /experiments-results
