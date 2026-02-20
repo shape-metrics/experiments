@@ -37,15 +37,29 @@ void generate_graphs(
             const int number_of_edges = static_cast<int>(density * number_of_nodes);
             std::cout << "\rGenerating graph with " << number_of_nodes << " nodes and "
                       << number_of_edges << " edges.     ";
-            UndirectedGraph graph = generate_connected_random_graph_degree_max_4(
+            const auto graph = generate_connected_random_graph_degree_max_4(
                 static_cast<size_t>(number_of_nodes),
                 static_cast<size_t>(number_of_edges)
             );
+            if (!graph) {
+                string error_msg = "Could not generate graph with " +
+                                   std::to_string(number_of_nodes) + " nodes and " +
+                                   std::to_string(number_of_edges) + " edges.\n";
+                error_msg += "Error: " + graph.error() + "\n";
+                std::cout << error_msg;
+                return;
+            }
             const string graph_name = "graph_" + std::to_string(i) + "_n" +
                                       std::to_string(number_of_nodes) + "_m" +
                                       std::to_string(number_of_edges) + ".txt";
             path filename = sub_folder / graph_name;
-            save_graph_to_file(graph, filename);
+            const auto saved = save_graph_to_file(*graph, filename);
+            if (!saved) {
+                string error_msg = "Could not save graph to file " + filename.string() + "\n";
+                error_msg += "Error: " + saved.error() + "\n";
+                std::cout << error_msg;
+                return;
+            }
             ++number_of_generated_graphs;
         }
     }

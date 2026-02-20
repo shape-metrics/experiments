@@ -24,11 +24,14 @@ class OgdfExperiments : public Experiments<OrthogonalDrawing> {
         std::filesystem::path output_grid_svgs_folder,
         std::filesystem::path drawing_results_folder
     );
-    std::pair<OrthogonalDrawing, double>
+    std::expected<std::pair<OrthogonalDrawing, double>, std::string>
     compute_drawing(const UndirectedGraph& graph, std::string graph_name) override;
-    void save_stats(const OrthogonalDrawing& drawing, double time, std::string graph_name) override;
-    void save_svg(const OrthogonalDrawing& drawing, std::string graph_name) override;
-    void save_drawing(const OrthogonalDrawing& drawing, std::string graph_name) override;
+    std::expected<void, std::string>
+    save_stats(const OrthogonalDrawing& drawing, double time, std::string graph_name) override;
+    std::expected<void, std::string>
+    save_svg(const OrthogonalDrawing& drawing, std::string graph_name) override;
+    std::expected<void, std::string>
+    save_drawing(const OrthogonalDrawing& drawing, std::string graph_name) override;
     void initialize_csv_file() override;
 };
 

@@ -28,16 +28,21 @@ ShapeMetricsExperiments::ShapeMetricsExperiments(
     create_folder(drawing_results_folder);
 }
 
-pair<ShapeMetricsDrawing, double>
+expected<pair<ShapeMetricsDrawing, double>, string>
 ShapeMetricsExperiments::compute_drawing(const UndirectedGraph& graph, string graph_name) {
     auto start = high_resolution_clock::now();
     auto result = make_orthogonal_drawing(graph);
     auto end = high_resolution_clock::now();
+    if (!result) {
+        string error_msg = "Could not compute drawing for graph " + graph_name + "\n";
+        error_msg += "Error: " + result.error() + "\n";
+        return std::unexpected(error_msg);
+    }
     auto duration = end - start;
-    return make_pair(result, duration.count());
+    return make_pair(std::move(*result), duration.count());
 }
 
-void ShapeMetricsExperiments::save_stats(
+std::expected<void, std::string> ShapeMetricsExperiments::save_stats(
     const ShapeMetricsDrawing& drawing, double time, string graph_name
 ) {
     lock_guard lock(get_lock());
@@ -48,6 +53,7 @@ void ShapeMetricsExperiments::save_stats(
                      << stats.bends_stddev << "," << time << "," << drawing.initial_number_of_cycles
                      << "," << drawing.number_of_added_cycles << ","
                      << drawing.number_of_useless_bends << "\n";
+    return {};
 }
 
 void ShapeMetricsExperiments::initialize_csv_file() {
@@ -58,12 +64,27 @@ void ShapeMetricsExperiments::initialize_csv_file() {
                      << "initial_number_cycles,number_added_cycles,number_useless_bends\n";
 }
 
-void ShapeMetricsExperiments::save_svg(const ShapeMetricsDrawing& drawing, string graph_name) {
+std::expected<void, std::string>
+ShapeMetricsExperiments::save_svg(const ShapeMetricsDrawing& drawing, string graph_name) {
     path svg_output_path = get_svg_folder_path() / (graph_name + ".svg");
-    make_svg(drawing.drawing.augmented_graph, drawing.drawing.attributes, svg_output_path);
+    auto saved =
+        make_svg(drawing.drawing.augmented_graph, drawing.drawing.attributes, svg_output_path);
+    if (!saved) {
+        string error_msg = "Could not save svg for graph " + graph_name + "\n";
+        error_msg += "Error: " + saved.error() + "\n";
+        return std::unexpected(error_msg);
+    }
+    return {};
 }
 
-void ShapeMetricsExperiments::save_drawing(const ShapeMetricsDrawing& drawing, string graph_name) {
+std::expected<void, std::string>
+ShapeMetricsExperiments::save_drawing(const ShapeMetricsDrawing& drawing, string graph_name) {
     path drawing_results_path = get_drawing_results_folder_path() / (graph_name + ".json");
-    save_shape_metrics_drawing_to_file(drawing, drawing_results_path.string());
+    auto saved = save_shape_metrics_drawing_to_file(drawing, drawing_results_path.string());
+    if (!saved) {
+        string error_msg = "Could not save drawing for graph " + graph_name + "\n";
+        error_msg += "Error: " + saved.error() + "\n";
+        return std::unexpected(error_msg);
+    }
+    return {};
 }
