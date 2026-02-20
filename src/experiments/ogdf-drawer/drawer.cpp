@@ -1,4 +1,4 @@
-#include "ogdf-drawer.hpp"
+#include "drawer.hpp"
 
 #include <ogdf/basic/Graph.h>
 #include <ogdf/basic/GraphAttributes.h>
@@ -17,16 +17,17 @@
 #include <chrono>
 #include <cmath>
 #include <functional>
-#include <map>
 #include <optional>
 #include <sstream>
 #include <utility>
 
+#include <domus/core/graph/graph.hpp>
 #include <domus/core/utils.hpp>
 #include <domus/orthogonal/equivalence_classes.hpp>
 #include <domus/orthogonal/shape/shape.hpp>
 
 using namespace std;
+using namespace std::chrono;
 
 constexpr double grid = 100.0;
 
@@ -119,7 +120,7 @@ unordered_map<int, int> compute_grid_positions(
 ) {
     unordered_map<int, int> node_id_to_position;
     int current_position = 0; // position at this point are 0, 1, 2, ...
-    constexpr int THRESHOLD = 4500;
+    constexpr int THRESHOLD = 5500;
     unordered_map<int, int> in_degree;
     for (int class_id : ordering_of_classes.get_nodes_ids()) {
         for (int neighbor_class_id : ordering_of_classes.get_out_neighbors_of_node(class_id)) {
@@ -240,23 +241,30 @@ void make_shifts_overlapping_edges(
                 augmented_graph.remove_edge(node_id, neighbor_id);
                 shape.remove_direction(node_id, neighbor_id);
                 shape.set_direction(added_node_id, neighbor_id, direction);
+                shape.set_direction(neighbor_id, added_node_id, opposite_direction(direction));
                 if (is_horizontal(direction)) {
                     int added_x = attributes.get_position_x(node_id);
                     int added_y = attributes.get_position_y(node_id) + shift;
                     attributes.set_position(added_node_id, added_x, added_y);
-                    if (shift < 0)
+                    if (shift < 0) {
                         shape.set_direction(node_id, added_node_id, Direction::DOWN);
-                    else
+                        shape.set_direction(added_node_id, node_id, Direction::UP);
+                    } else {
                         shape.set_direction(node_id, added_node_id, Direction::UP);
+                        shape.set_direction(added_node_id, node_id, Direction::DOWN);
+                    }
                     attributes.change_position_y(neighbor_id, added_y);
                 } else {
                     int added_x = attributes.get_position_x(node_id) + shift;
                     int added_y = attributes.get_position_y(node_id);
                     attributes.set_position(added_node_id, added_x, added_y);
-                    if (shift < 0)
+                    if (shift < 0) {
                         shape.set_direction(node_id, added_node_id, Direction::LEFT);
-                    else
+                        shape.set_direction(added_node_id, node_id, Direction::RIGHT);
+                    } else {
                         shape.set_direction(node_id, added_node_id, Direction::RIGHT);
+                        shape.set_direction(added_node_id, node_id, Direction::LEFT);
+                    }
                     attributes.change_position_x(neighbor_id, added_x);
                 }
             }
@@ -327,10 +335,10 @@ OrthogonalDrawing convert_ogdf_result(
     Shape shape = compute_shape(augmented_graph, id_to_ogdf_positions);
     GraphAttributes attributes =
         compute_graph_attributes(graph, shape, augmented_graph, id_to_ogdf_positions);
-    return {move(augmented_graph), move(attributes), move(shape)};
+    return {std::move(augmented_graph), std::move(attributes), std::move(shape)};
 }
 
-tuple<OrthogonalDrawing, double, string>
+tuple<OrthogonalDrawing, double, string, int>
 make_orthogonal_drawing_ogdf(const UndirectedGraph& graph) {
     ogdf::Graph G;
     ogdf::GraphAttributes GA(
@@ -346,17 +354,16 @@ make_orthogonal_drawing_ogdf(const UndirectedGraph& graph) {
         nodeid_to_ogdf_node[node_id] = G.newNode(node_id);
         ogdf_index_to_nodeid[nodeid_to_ogdf_node[node_id]->index()] = node_id;
     }
-    for (int from_id : graph.get_nodes_ids()) {
+    for (int from_id : graph.get_nodes_ids())
         for (int to_id : graph.get_neighbors_of_node(from_id)) {
             if (from_id > to_id)
                 continue;
             G.newEdge(nodeid_to_ogdf_node[from_id], nodeid_to_ogdf_node[to_id]);
         }
-    }
     for (ogdf::node v : G.nodes)
         GA.label(v) = to_string(v->index());
 
-    auto start = chrono::high_resolution_clock::now();
+    auto start = high_resolution_clock::now();
 
     ogdf::PlanarizationLayout pl;
     ogdf::SubgraphPlanarizer* crossMin = new ogdf::SubgraphPlanarizer;
@@ -377,14 +384,21 @@ make_orthogonal_drawing_ogdf(const UndirectedGraph& graph) {
     ol->cOverhang(0.1);
     pl.setPlanarLayouter(ol);
 
-    ogdf::setSeed(0);
+    // ogdf::setSeed(0);
     pl.call(GA);
 
-    auto end = chrono::high_resolution_clock::now();
+    auto end = high_resolution_clock::now();
     chrono::duration<double> elapsed = end - start;
+
+    ogdf::LayoutStatistics stats;
+
+    int crossings = 0;
+    for (auto& elem : stats.numberOfCrossings(GA))
+        crossings += elem;
+    crossings /= 2;
 
     stringstream ss;
     ogdf::GraphIO::drawSVG(GA, ss);
     OrthogonalDrawing result = convert_ogdf_result(GA, G, graph, ogdf_index_to_nodeid);
-    return make_tuple(move(result), elapsed.count(), ss.str());
+    return make_tuple(std::move(result), elapsed.count(), ss.str(), crossings);
 }

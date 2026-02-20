@@ -1,0 +1,21 @@
+#################################
+# GRAPH GENERATION CONFIG
+#################################
+generated_graphs_folder=generated-graphs/
+min_graph_density=1.25
+max_graph_density=1.75
+min_number_of_nodes=20
+max_number_of_nodes=60
+graphs_generated_per_same_nodes_number=100
+
+
+#################################
+# EXPERIMENTS CONFIG
+#################################
+drawer_type=OGDF
+#drawer_type=shape_metrics
+graphs_folder=rome_graphs_subset/
+csv_stats_file_path=test_results.csv
+svgs_folder_path=output-svgs/
+ogdf_svgs_folder_path=output-svgs-ogdf/
+drawing_results_folder_path=drawing_results/
