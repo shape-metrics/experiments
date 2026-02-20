@@ -102,9 +102,8 @@ template <typename DrawingT> class Experiments {
             if (t.joinable())
                 t.join();
         std::cout << "All stats computed.\n"
-                  << "Threads used: " << num_threads << "\n"
-                  << "Total fails: " << total_fails << "\n"
-                  << "Total graphs: " << current_number << "\n";
+                  << "Total graphs: " << current_number << "\n"
+                  << "Total fails: " << total_fails << "\n";
     }
 };
 
