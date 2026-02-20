@@ -44,35 +44,65 @@ bool want_to_re_initialize_csv(path csv_stats_file_path) {
     exit(1);
 }
 
+void missing_key_in_config_error(string key) {
+    std::cout << "Missing key in config.txt\n";
+    std::cout << "Could not find [" << key << "]\n";
+    exit(1);
+}
+
 int main() {
-    Config config("config.txt");
-    bool initialize_csv = want_to_re_initialize_csv(config.get("csv_stats_file_path"));
-    string drawer_type = config.get("drawer_type");
+    auto config = Config::create("config.txt");
+    if (!config) {
+        std::cout << "Could not initialize Config: " << config.error() << "\n";
+        return 1;
+    }
+
+    const auto csv_file_path = config->get("csv_stats_file_path");
+    if (!csv_file_path)
+        missing_key_in_config_error("csv_stats_file_path");
+    const auto drawer_type = config->get("drawer_type");
+    if (!drawer_type)
+        missing_key_in_config_error("drawer_type");
+    const auto graphs_folder = config->get("graphs_folder");
+    if (!graphs_folder)
+        missing_key_in_config_error("graphs_folder");
+    const auto svgs_folder_path = config->get("svgs_folder_path");
+    if (!svgs_folder_path)
+        missing_key_in_config_error("svgs_folder_path");
+    const auto drawing_results_folder_path = config->get("drawing_results_folder_path");
+    if (!drawing_results_folder_path)
+        missing_key_in_config_error("drawing_results_folder_path");
+
+    bool initialize_csv = want_to_re_initialize_csv(*csv_file_path);
+
     if (drawer_type == "OGDF") {
+        const auto ogdf_svgs_folder_path = config->get("ogdf_svgs_folder_path");
+        if (!ogdf_svgs_folder_path)
+            missing_key_in_config_error("ogdf_svgs_folder_path");
         OgdfExperiments experiment_runner(
-            config.get("graphs_folder"),
+            *graphs_folder,
             initialize_csv,
-            config.get("csv_stats_file_path"),
-            config.get("ogdf_svgs_folder_path"),
-            config.get("svgs_folder_path"),
-            config.get("drawing_results_folder_path")
+            *csv_file_path,
+            *ogdf_svgs_folder_path,
+            *svgs_folder_path,
+            *drawing_results_folder_path
         );
         if (!initialize_csv)
-            add_graphs_to_skip(experiment_runner, config.get("csv_stats_file_path"));
+            add_graphs_to_skip(experiment_runner, *csv_file_path);
         experiment_runner.run_experiments();
     } else if (drawer_type == "shape_metrics") {
         ShapeMetricsExperiments experiment_runner(
-            config.get("graphs_folder"),
+            *graphs_folder,
             initialize_csv,
-            config.get("csv_stats_file_path"),
-            config.get("svgs_folder_path"),
-            config.get("drawing_results_folder_path")
+            *csv_file_path,
+            *svgs_folder_path,
+            *drawing_results_folder_path
         );
         if (!initialize_csv)
-            add_graphs_to_skip(experiment_runner, config.get("csv_stats_file_path"));
+            add_graphs_to_skip(experiment_runner, *csv_file_path);
         experiment_runner.run_experiments();
     } else {
-        std::cout << "Unknown drawer type: " << drawer_type << "\n";
+        std::cout << "Unknown drawer type: " << *drawer_type << "\n";
         return 1;
     }
     return 0;
