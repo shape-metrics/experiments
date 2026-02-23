@@ -51,19 +51,19 @@ Shape compute_shape(
             int y_offset = abs(y_from - y_to);
             if (x_offset > y_offset) { // edge is horizontal
                 if (x_from < x_to) {
-                    shape.set_direction(from_id, to_id, Direction::RIGHT).value();
-                    shape.set_direction(to_id, from_id, Direction::LEFT).value();
+                    shape.set_direction(from_id, to_id, Direction::RIGHT);
+                    shape.set_direction(to_id, from_id, Direction::LEFT);
                 } else {
-                    shape.set_direction(from_id, to_id, Direction::LEFT).value();
-                    shape.set_direction(to_id, from_id, Direction::RIGHT).value();
+                    shape.set_direction(from_id, to_id, Direction::LEFT);
+                    shape.set_direction(to_id, from_id, Direction::RIGHT);
                 }
             } else { // edge is vertical
                 if (y_from < y_to) {
-                    shape.set_direction(from_id, to_id, Direction::UP).value();
-                    shape.set_direction(to_id, from_id, Direction::DOWN).value();
+                    shape.set_direction(from_id, to_id, Direction::UP);
+                    shape.set_direction(to_id, from_id, Direction::DOWN);
                 } else {
-                    shape.set_direction(from_id, to_id, Direction::DOWN).value();
-                    shape.set_direction(to_id, from_id, Direction::UP).value();
+                    shape.set_direction(from_id, to_id, Direction::DOWN);
+                    shape.set_direction(to_id, from_id, Direction::UP);
                 }
             }
         }
@@ -239,20 +239,19 @@ void make_shifts_overlapping_edges(
                 augmented_graph.add_edge(node_id, added_node_id);
                 augmented_graph.add_edge(added_node_id, neighbor_id);
                 augmented_graph.remove_edge(node_id, neighbor_id);
-                shape.remove_direction(node_id, neighbor_id).value();
-                shape.set_direction(added_node_id, neighbor_id, direction).value();
-                shape.set_direction(neighbor_id, added_node_id, opposite_direction(direction))
-                    .value();
+                shape.remove_direction(node_id, neighbor_id);
+                shape.set_direction(added_node_id, neighbor_id, direction);
+                shape.set_direction(neighbor_id, added_node_id, opposite_direction(direction));
                 if (is_horizontal(direction)) {
                     int added_x = attributes.get_position_x(node_id);
                     int added_y = attributes.get_position_y(node_id) + shift;
                     attributes.set_position(added_node_id, added_x, added_y);
                     if (shift < 0) {
-                        shape.set_direction(node_id, added_node_id, Direction::DOWN).value();
-                        shape.set_direction(added_node_id, node_id, Direction::UP).value();
+                        shape.set_direction(node_id, added_node_id, Direction::DOWN);
+                        shape.set_direction(added_node_id, node_id, Direction::UP);
                     } else {
-                        shape.set_direction(node_id, added_node_id, Direction::UP).value();
-                        shape.set_direction(added_node_id, node_id, Direction::DOWN).value();
+                        shape.set_direction(node_id, added_node_id, Direction::UP);
+                        shape.set_direction(added_node_id, node_id, Direction::DOWN);
                     }
                     attributes.change_position_y(neighbor_id, added_y);
                 } else {
@@ -260,11 +259,11 @@ void make_shifts_overlapping_edges(
                     int added_y = attributes.get_position_y(node_id);
                     attributes.set_position(added_node_id, added_x, added_y);
                     if (shift < 0) {
-                        shape.set_direction(node_id, added_node_id, Direction::LEFT).value();
-                        shape.set_direction(added_node_id, node_id, Direction::RIGHT).value();
+                        shape.set_direction(node_id, added_node_id, Direction::LEFT);
+                        shape.set_direction(added_node_id, node_id, Direction::RIGHT);
                     } else {
-                        shape.set_direction(node_id, added_node_id, Direction::RIGHT).value();
-                        shape.set_direction(added_node_id, node_id, Direction::LEFT).value();
+                        shape.set_direction(node_id, added_node_id, Direction::RIGHT);
+                        shape.set_direction(added_node_id, node_id, Direction::LEFT);
                     }
                     attributes.change_position_x(neighbor_id, added_x);
                 }

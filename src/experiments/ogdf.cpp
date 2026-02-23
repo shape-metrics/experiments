@@ -1,7 +1,7 @@
 #include "ogdf.hpp"
 
-#include <iostream>
-#include <stdexcept>
+#include <format>
+#include <print>
 
 #include <domus/orthogonal/drawing_stats.hpp>
 
@@ -22,70 +22,86 @@ OgdfExperiments::OgdfExperiments(
       output_ogdf_svgs_folder_m(output_ogdf_svgs_folder) {
     if (need_to_initialize_csv) {
         csv_stats_file_m.open(csv_stats_file);
-        initialize_csv_file();
+        initialize_csv_file().value();
         filesystem::remove_all(output_ogdf_svgs_folder);
         filesystem::remove_all(output_grid_svgs_folder);
         filesystem::remove_all(drawing_results_folder);
     } else
         csv_stats_file_m.open(csv_stats_file, std::ios_base::app);
-    create_folder(output_ogdf_svgs_folder);
-    create_folder(output_grid_svgs_folder);
-    create_folder(drawing_results_folder);
+    create_folder(output_ogdf_svgs_folder).value();
+    create_folder(output_grid_svgs_folder).value();
+    create_folder(drawing_results_folder).value();
 }
 
 expected<pair<OrthogonalDrawing, double>, string>
-OgdfExperiments::compute_drawing(const UndirectedGraph& graph, string graph_name) {
+OgdfExperiments::compute_drawing(const UndirectedGraph& graph, string_view graph_name) {
     auto [drawing, time, svg_string, crossings] = make_orthogonal_drawing_ogdf(graph);
-    string ogdf_svg_filename = output_ogdf_svgs_folder_m / (graph_name + ".svg");
+    string ogdf_svg_filename = output_ogdf_svgs_folder_m / std::format("{}.svg", graph_name);
     ofstream svgFile(ogdf_svg_filename);
-    if (!svgFile.is_open()) {
-        lock_guard<mutex> lock(get_lock());
-        string error_msg = "Could not open file " + ogdf_svg_filename + "\n";
-        return std::unexpected(error_msg);
-    }
+    if (!svgFile.is_open())
+        return std::unexpected(std::format("Could not open file {}\n", ogdf_svg_filename));
     svgFile << svg_string;
     svgFile.close();
     return make_pair(drawing, time);
 }
 
-expected<void, string>
-OgdfExperiments::save_stats(const OrthogonalDrawing& drawing, double time, string graph_name) {
-    lock_guard lock(get_lock());
+void OgdfExperiments::save_stats(
+    const OrthogonalDrawing& drawing, double time, string_view graph_name
+) {
     const OrthogonalStats stats = compute_all_orthogonal_stats(drawing);
-    csv_stats_file_m << graph_name << "," << stats.crossings << "," << stats.bends << ","
-                     << stats.area << "," << stats.total_edge_length << "," << stats.max_edge_length
-                     << "," << stats.max_bends_per_edge << "," << stats.edge_length_stddev << ","
-                     << stats.bends_stddev << "," << time << "\n";
-    return {};
+    std::print(
+        csv_stats_file_m,
+        "{},{},{},{},{},{},{},{},{},{}\n",
+        graph_name,
+        stats.crossings,
+        stats.bends,
+        stats.area,
+        stats.total_edge_length,
+        stats.max_edge_length,
+        stats.max_bends_per_edge,
+        stats.edge_length_stddev,
+        stats.bends_stddev,
+        time
+    );
 }
 
-void OgdfExperiments::initialize_csv_file() {
+expected<void, string> OgdfExperiments::initialize_csv_file() {
     if (!csv_stats_file_m.is_open())
-        throw runtime_error("Error: Could not open result file");
+        return unexpected("Error: Could not open result csv file");
     csv_stats_file_m << "graph_name,crossings,bends,area,total_edge_length,max_edge_length,"
                      << "max_bends_per_edge,edge_length_stddev,bends_stddev,time\n";
-}
-
-expected<void, string>
-OgdfExperiments::save_svg(const OrthogonalDrawing& drawing, string graph_name) {
-    path svg_output_path = get_svg_folder_path() / (graph_name + ".svg");
-    auto saved = make_svg(drawing.augmented_graph, drawing.attributes, svg_output_path);
-    if (!saved) {
-        string error_msg = "Could not save svg for graph " + graph_name + "\n";
-        error_msg += "Error: " + saved.error() + "\n";
-        return std::unexpected(error_msg);
-    }
     return {};
 }
 
 expected<void, string>
-OgdfExperiments::save_drawing(const OrthogonalDrawing& drawing, string graph_name) {
-    path drawing_results_path = get_drawing_results_folder_path() / (graph_name + ".json");
-    auto saved = save_orthogonal_drawing_to_file(drawing, drawing_results_path.string());
-    if (!saved) {
-        string error_msg = "Could not save drawing for graph " + graph_name + "\n";
-        error_msg += "Error: " + saved.error() + "\n";
-        return std::unexpected(error_msg);
-    }
+OgdfExperiments::save_svg(const OrthogonalDrawing& drawing, string_view graph_name) {
+    path svg_output_path = get_svg_folder_path() / std::format("{}.svg", graph_name);
+    auto saved = make_svg(drawing.augmented_graph, drawing.attributes, svg_output_path);
+    if (!saved)
+        return std::unexpected(
+            std::format(
+                "Could not save svg for graph {}\n"
+                "Error: {}\n",
+                graph_name,
+                saved.error()
+            )
+        );
+    return {};
+}
+
+expected<void, string>
+OgdfExperiments::save_drawing(const OrthogonalDrawing& drawing, string_view graph_name) {
+    path drawing_results_path =
+        get_drawing_results_folder_path() / std::format("{}.json", graph_name);
+    auto saved = save_orthogonal_drawing_to_file(drawing, drawing_results_path);
+    if (!saved)
+        return std::unexpected(
+            std::format(
+                "Could not save drawing for graph {}\n"
+                "Error: {}\n",
+                graph_name,
+                saved.error()
+            )
+        );
     return {};
 }
