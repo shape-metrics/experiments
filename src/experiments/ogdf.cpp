@@ -42,7 +42,7 @@ OgdfExperiments::compute_drawing(const UndirectedGraph& graph, string_view graph
         return std::unexpected(std::format("Could not open file {}\n", ogdf_svg_filename));
     svgFile << svg_string;
     svgFile.close();
-    return make_pair(drawing, time);
+    return make_pair(std::move(drawing), time);
 }
 
 void OgdfExperiments::save_stats(

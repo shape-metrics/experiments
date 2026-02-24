@@ -61,7 +61,7 @@ template <typename DrawingT> class Experiments {
             );
             return 1;
         }
-        DrawingT drawing = result->first;
+        DrawingT drawing = std::move(result->first);
         double time = result->second;
         save_stats(drawing, time, graph_filename);
         auto saved_svg = save_svg(drawing, graph_filename);
