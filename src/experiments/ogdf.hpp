@@ -10,7 +10,7 @@
 
 #include "experiments.hpp"
 
-class OgdfExperiments : public Experiments<OrthogonalDrawing> {
+class OgdfExperiments : public Experiments<domus::orthogonal::OrthogonalDrawing> {
   private:
     std::filesystem::path output_ogdf_svgs_folder_m;
     std::ofstream csv_stats_file_m;
@@ -24,14 +24,19 @@ class OgdfExperiments : public Experiments<OrthogonalDrawing> {
         std::filesystem::path output_grid_svgs_folder,
         std::filesystem::path drawing_results_folder
     );
-    std::expected<std::pair<OrthogonalDrawing, double>, std::string>
-    compute_drawing(const UndirectedGraph& graph, std::string_view graph_name) override;
-    void
-    save_stats(const OrthogonalDrawing& drawing, double time, std::string_view graph_name) override;
-    std::expected<void, std::string>
-    save_svg(const OrthogonalDrawing& drawing, std::string_view graph_name) override;
-    std::expected<void, std::string>
-    save_drawing(const OrthogonalDrawing& drawing, std::string_view graph_name) override;
+    std::expected<std::pair<domus::orthogonal::OrthogonalDrawing, double>, std::string>
+    compute_drawing(const domus::graph::Graph& graph, std::string_view graph_name) override;
+    void save_stats(
+        const domus::orthogonal::OrthogonalDrawing& drawing,
+        double time,
+        std::string_view graph_name
+    ) override;
+    std::expected<void, std::string> save_svg(
+        const domus::orthogonal::OrthogonalDrawing& drawing, std::string_view graph_name
+    ) override;
+    std::expected<void, std::string> save_drawing(
+        const domus::orthogonal::OrthogonalDrawing& drawing, std::string_view graph_name
+    ) override;
     std::expected<void, std::string> initialize_csv_file() override;
 };
 

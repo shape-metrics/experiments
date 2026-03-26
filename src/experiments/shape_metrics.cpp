@@ -2,13 +2,19 @@
 
 #include <chrono>
 #include <format>
+#include <print>
 
 #include <domus/orthogonal/drawing_stats.hpp>
-#include <print>
+#include <domus/orthogonal/loader.hpp>
 
 using namespace std;
 using namespace std::filesystem;
 using namespace std::chrono;
+
+using domus::graph::Graph;
+using domus::orthogonal::ShapeMetricsDrawing;
+using domus::orthogonal::stats::compute_all_orthogonal_stats;
+using domus::orthogonal::stats::OrthogonalStats;
 
 ShapeMetricsExperiments::ShapeMetricsExperiments(
     path graphs_folder_path,
@@ -30,21 +36,12 @@ ShapeMetricsExperiments::ShapeMetricsExperiments(
 }
 
 expected<pair<ShapeMetricsDrawing, double>, string>
-ShapeMetricsExperiments::compute_drawing(const UndirectedGraph& graph, string_view graph_name) {
+ShapeMetricsExperiments::compute_drawing(const Graph& graph, string_view graph_name) {
     auto start = high_resolution_clock::now();
-    auto result = make_orthogonal_drawing(graph);
+    auto result = domus::orthogonal::make_orthogonal_drawing(graph);
     auto end = high_resolution_clock::now();
-    if (!result)
-        return std::unexpected(
-            std::format(
-                "Could not compute drawing for graph {}\n"
-                "Error: {}\n",
-                graph_name,
-                result.error()
-            )
-        );
     auto duration = end - start;
-    return make_pair(std::move(*result), duration.count());
+    return make_pair(std::move(result), duration.count());
 }
 
 void ShapeMetricsExperiments::save_stats(
@@ -82,8 +79,12 @@ expected<void, string> ShapeMetricsExperiments::initialize_csv_file() {
 std::expected<void, std::string>
 ShapeMetricsExperiments::save_svg(const ShapeMetricsDrawing& drawing, string_view graph_name) {
     path svg_output_path = get_svg_folder_path() / std::format("{}.svg", graph_name);
-    auto saved =
-        make_svg(drawing.drawing.augmented_graph, drawing.drawing.attributes, svg_output_path);
+    auto saved = domus::orthogonal::make_svg(
+        drawing.drawing.augmented_graph,
+        drawing.drawing.attributes,
+        drawing.drawing.shape,
+        svg_output_path
+    );
     if (!saved) {
         return std::unexpected(
             std::format(
@@ -101,7 +102,10 @@ std::expected<void, std::string>
 ShapeMetricsExperiments::save_drawing(const ShapeMetricsDrawing& drawing, string_view graph_name) {
     path drawing_results_path =
         get_drawing_results_folder_path() / std::format("{}.json", graph_name);
-    auto saved = save_shape_metrics_drawing_to_file(drawing, drawing_results_path.string());
+    auto saved = domus::orthogonal::loader::save_shape_metrics_drawing_to_file(
+        drawing,
+        drawing_results_path.string()
+    );
     if (!saved)
         return std::unexpected(
             std::format(

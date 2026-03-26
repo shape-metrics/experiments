@@ -11,7 +11,7 @@
 
 #include "experiments.hpp"
 
-class ShapeMetricsExperiments : public Experiments<ShapeMetricsDrawing> {
+class ShapeMetricsExperiments : public Experiments<domus::orthogonal::ShapeMetricsDrawing> {
     std::ofstream csv_stats_file_m;
 
   public:
@@ -22,15 +22,19 @@ class ShapeMetricsExperiments : public Experiments<ShapeMetricsDrawing> {
         std::filesystem::path output_svgs_folder,
         std::filesystem::path drawing_results_folder
     );
-    std::expected<std::pair<ShapeMetricsDrawing, double>, std::string>
-    compute_drawing(const UndirectedGraph& graph, std::string_view graph_name) override;
+    std::expected<std::pair<domus::orthogonal::ShapeMetricsDrawing, double>, std::string>
+    compute_drawing(const domus::graph::Graph& graph, std::string_view graph_name) override;
     void save_stats(
-        const ShapeMetricsDrawing& drawing, double time, std::string_view graph_name
+        const domus::orthogonal::ShapeMetricsDrawing& drawing,
+        double time,
+        std::string_view graph_name
     ) override;
-    std::expected<void, std::string>
-    save_svg(const ShapeMetricsDrawing& drawing, std::string_view graph_name) override;
-    std::expected<void, std::string>
-    save_drawing(const ShapeMetricsDrawing& drawing, std::string_view graph_name) override;
+    std::expected<void, std::string> save_svg(
+        const domus::orthogonal::ShapeMetricsDrawing& drawing, std::string_view graph_name
+    ) override;
+    std::expected<void, std::string> save_drawing(
+        const domus::orthogonal::ShapeMetricsDrawing& drawing, std::string_view graph_name
+    ) override;
     std::expected<void, std::string> initialize_csv_file() override;
 };
 

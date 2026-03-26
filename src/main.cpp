@@ -17,7 +17,7 @@ using namespace std;
 using namespace std::filesystem;
 
 template <typename E> void add_graphs_to_skip(E& experiment_runner, path csv_stats_file_path) {
-    auto csv_data = parse_csv(csv_stats_file_path);
+    auto csv_data = domus::parse_csv(csv_stats_file_path);
     if (!csv_data) {
         std::cout << "Could not parse csv file at " << csv_stats_file_path.string() << "\n";
         std::cout << "Error: " << csv_data.error() << "\n";
@@ -64,8 +64,8 @@ void missing_key_in_config_error(string key) {
 #define OGDF_SVGS_FOLDER_PATH "ogdf_svgs_folder_path"
 
 int main() {
-    return Config::create("config.txt")
-        .and_then([](unique_ptr<Config> config) -> expected<int, string> {
+    return domus::Config::create("config.txt")
+        .and_then([](unique_ptr<domus::Config> config) -> expected<int, string> {
             auto csv_path_opt = config->get(CSV_STATS_FILE_PATH);
             auto drawer_opt = config->get(DRAWER_TYPE);
             auto graphs_opt = config->get(GRAPHS_FOLDER);

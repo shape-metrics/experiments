@@ -11,6 +11,9 @@
 
 using namespace std;
 using namespace std::filesystem;
+using namespace domus::graph;
+using namespace domus::graph::generators;
+using namespace domus::graph::loader;
 
 void generate_graphs(
     path generated_graphs_folder,
@@ -32,7 +35,7 @@ void generate_graphs(
             const int number_of_edges = static_cast<int>(density * number_of_nodes);
             std::cout << "\rGenerating graph with " << number_of_nodes << " nodes and "
                       << number_of_edges << " edges.     ";
-            const UndirectedGraph graph = generate_connected_random_graph_degree_max_4(
+            const Graph graph = generate_connected_random_graph_degree_max_4(
                 static_cast<size_t>(number_of_nodes),
                 static_cast<size_t>(number_of_edges)
             );
@@ -62,8 +65,8 @@ void generate_graphs(
 #define GRAPHS_GENERATED_PER_SAME_NODES_NUMBER "graphs_generated_per_same_nodes_number"
 
 int main() {
-    return Config::create(CONFIG_FILE_PATH)
-        .and_then([](unique_ptr<Config> config) -> expected<int, string> {
+    return domus::Config::create(CONFIG_FILE_PATH)
+        .and_then([](unique_ptr<domus::Config> config) -> expected<int, string> {
             const auto generated_graphs_folder = config->get(GENERATED_GRAPHS_FOLDER);
             const auto min_density = config->get(MIN_GRAPH_DENSITY);
             const auto max_density = config->get(MAX_GRAPH_DENSITY);

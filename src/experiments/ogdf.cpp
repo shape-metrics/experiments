@@ -33,8 +33,8 @@ OgdfExperiments::OgdfExperiments(
     create_folder(drawing_results_folder).value();
 }
 
-expected<pair<OrthogonalDrawing, double>, string>
-OgdfExperiments::compute_drawing(const UndirectedGraph& graph, string_view graph_name) {
+expected<pair<domus::orthogonal::OrthogonalDrawing, double>, string>
+OgdfExperiments::compute_drawing(const domus::graph::Graph& graph, string_view graph_name) {
     auto [drawing, time, svg_string, crossings] = make_orthogonal_drawing_ogdf(graph);
     string ogdf_svg_filename = output_ogdf_svgs_folder_m / std::format("{}.svg", graph_name);
     ofstream svgFile(ogdf_svg_filename);
@@ -46,9 +46,10 @@ OgdfExperiments::compute_drawing(const UndirectedGraph& graph, string_view graph
 }
 
 void OgdfExperiments::save_stats(
-    const OrthogonalDrawing& drawing, double time, string_view graph_name
+    const domus::orthogonal::OrthogonalDrawing& drawing, double time, string_view graph_name
 ) {
-    const OrthogonalStats stats = compute_all_orthogonal_stats(drawing);
+    const domus::orthogonal::stats::OrthogonalStats stats =
+        domus::orthogonal::stats::compute_all_orthogonal_stats(drawing);
     std::print(
         csv_stats_file_m,
         "{},{},{},{},{},{},{},{},{},{}\n",
@@ -73,10 +74,16 @@ expected<void, string> OgdfExperiments::initialize_csv_file() {
     return {};
 }
 
-expected<void, string>
-OgdfExperiments::save_svg(const OrthogonalDrawing& drawing, string_view graph_name) {
+expected<void, string> OgdfExperiments::save_svg(
+    const domus::orthogonal::OrthogonalDrawing& drawing, string_view graph_name
+) {
     path svg_output_path = get_svg_folder_path() / std::format("{}.svg", graph_name);
-    auto saved = make_svg(drawing.augmented_graph, drawing.attributes, svg_output_path);
+    auto saved = domus::orthogonal::make_svg(
+        drawing.augmented_graph,
+        drawing.attributes,
+        drawing.shape,
+        svg_output_path
+    );
     if (!saved)
         return std::unexpected(
             std::format(
@@ -89,8 +96,9 @@ OgdfExperiments::save_svg(const OrthogonalDrawing& drawing, string_view graph_na
     return {};
 }
 
-expected<void, string>
-OgdfExperiments::save_drawing(const OrthogonalDrawing& drawing, string_view graph_name) {
+expected<void, string> OgdfExperiments::save_drawing(
+    const domus::orthogonal::OrthogonalDrawing& drawing, string_view graph_name
+) {
     path drawing_results_path =
         get_drawing_results_folder_path() / std::format("{}.json", graph_name);
     auto saved = save_orthogonal_drawing_to_file(drawing, drawing_results_path);
